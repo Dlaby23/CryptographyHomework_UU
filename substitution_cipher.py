@@ -111,6 +111,8 @@ class SubstitutionCipher:
                 result.append(char)
             elif char == ' ':
                 result.append('_')
+            elif char == '_':
+                result.append('_')
         
         return ''.join(result)
 
