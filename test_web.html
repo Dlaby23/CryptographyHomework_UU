@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test SimpleSubCipher</title>
+</head>
+<body>
+    <h1>SimpleSubCipher Web Interface Test</h1>
+    <p>If you see this page, the server is running!</p>
+    <p><a href="http://localhost:5000">Go to the actual interface</a></p>
+    
+    <h2>Quick Test</h2>
+    <button onclick="testAPI()">Test API</button>
+    <div id="result"></div>
+    
+    <script>
+        function testAPI() {
+            fetch('http://localhost:5000/api/sample_text')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('result').innerHTML = 
+                        '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                })
+                .catch(error => {
+                    document.getElementById('result').innerHTML = 
+                        '<p style="color: red;">Error: ' + error + '</p>';
+                });
+        }
+    </script>
+</body>
+</html>

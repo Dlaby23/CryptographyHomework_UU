@@ -35,8 +35,10 @@ python3 web_app.py
 
 3. Open in browser:
 ```
-http://localhost:5000
+http://localhost:8080
 ```
+
+Note: Default port changed to 8080 to avoid conflicts with macOS AirPlay.
 
 ## API Endpoints
 
