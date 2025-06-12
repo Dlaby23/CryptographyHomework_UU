@@ -82,6 +82,12 @@ venv.bak/
 krakatit_processed.txt
 decrypted_results/
 bigram_matrix_visualization.png
+czech_corpus_*.txt
+czech_texts_metadata.json
+corpus_metadata.json
+enhanced_comparison.png
+czech-morfflex-*.tagger
+Testovaci_soubory/
 
 # Temporary files
 *.tmp
