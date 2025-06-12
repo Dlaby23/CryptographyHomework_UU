@@ -101,23 +101,40 @@ class CzechDictionary:
     def count_words(self, text: str) -> Tuple[int, float]:
         """Count recognized words in text."""
         words_found = 0
-        total_length = 0
         
-        # Split by underscores
-        potential_words = text.split('_')
+        # Split by underscores to get individual words
+        potential_words = [w for w in text.split('_') if len(w) > 0]
+        total_words = len(potential_words)
+        
+        # Count exact matches
+        for word in potential_words:
+            if word in self.common_words:
+                words_found += 1
+        
+        # Also give credit for common short words with boundaries
+        short_words_with_boundaries = {
+            '_A_', '_I_', '_V_', '_K_', '_S_', '_Z_', '_O_', '_U_',
+            '_JE_', '_NA_', '_TO_', '_SE_', '_NE_', '_PO_', '_DO_', 
+            '_ZE_', '_VE_', '_KE_', '_TE_', '_ME_', '_MU_', '_JI_',
+            '_SI_', '_BY_', '_AZ_', '_CI_', '_TU_', '_TAM_', '_KDE_'
+        }
+        
+        for pattern in short_words_with_boundaries:
+            if pattern in text:
+                words_found += 0.3  # Partial credit for pattern matches
+        
+        # Check for common word beginnings and endings
+        word_starts = {'JE', 'NA', 'PO', 'PRE', 'VY', 'ZA', 'NE', 'DO', 'SE'}
+        word_ends = {'HO', 'MI', 'MU', 'TE', 'ME', 'OU', 'EM', 'CH', 'NI'}
         
         for word in potential_words:
-            if len(word) > 0:
-                total_length += len(word)
-                if word in self.common_words:
-                    words_found += 1
+            if len(word) >= 3:
+                if word[:2] in word_starts or word[:3] in word_starts:
+                    words_found += 0.1
+                if word[-2:] in word_ends or word[-3:] in word_ends:
+                    words_found += 0.1
         
-        # Also check with underscores
-        for word in self.words:
-            if word in text:
-                words_found += 0.5  # Partial credit
-        
-        return words_found, words_found / max(len(potential_words), 1)
+        return words_found, words_found / max(total_words, 1)
 
 
 class EnhancedMetropolisHastings:
@@ -137,9 +154,9 @@ class EnhancedMetropolisHastings:
         self.dictionary = CzechDictionary() if use_dictionary else None
         
         # Weights for different scoring components
-        self.bigram_weight = 0.4
-        self.trigram_weight = 0.4
-        self.dictionary_weight = 0.2
+        self.bigram_weight = 0.3
+        self.trigram_weight = 0.3
+        self.dictionary_weight = 0.4  # Increased weight for word recognition
     
     def _calculate_comprehensive_fitness(self, text: str) -> float:
         """Calculate fitness using multiple metrics."""
@@ -161,6 +178,29 @@ class EnhancedMetropolisHastings:
             word_count, word_ratio = self.dictionary.count_words(text)
             dict_score = word_ratio * 10  # Scale to similar range
             score += self.dictionary_weight * dict_score
+        
+        # Bonus for proper underscore usage (word boundaries)
+        # Penalize multiple consecutive underscores
+        if '__' in text:
+            score -= text.count('__') * 0.5
+        if '___' in text:
+            score -= text.count('___') * 1.0
+        
+        # Penalize text starting or ending with underscore
+        if text.startswith('_'):
+            score -= 0.5
+        if text.endswith('_'):
+            score -= 0.5
+        
+        # Bonus for reasonable word lengths
+        words = [w for w in text.split('_') if w]  # Filter empty strings
+        reasonable_length_words = sum(1 for w in words if 2 <= len(w) <= 12)
+        score += reasonable_length_words * 0.1
+        
+        # Bonus for having underscore as common character (should be frequent as space)
+        underscore_ratio = text.count('_') / len(text)
+        if 0.1 <= underscore_ratio <= 0.25:  # Typical ratio for spaces in text
+            score += 0.5
         
         return score
     
@@ -202,8 +242,9 @@ class EnhancedMetropolisHastings:
     
     def _generate_initial_key_by_frequency(self, ciphertext: str) -> Dict[str, str]:
         """Generate initial key based on frequency analysis."""
-        # Czech letter frequencies (approximate)
-        czech_freq_order = 'EANTOIVLSRKUDMHPCZBJGFYW_QX'
+        # Czech letter frequencies with underscore (space) as most frequent
+        # Underscore should be first as it's the most common character (space)
+        czech_freq_order = '_EANTOIVLSRKUDMHPCZBJGFYWQX'
         
         # Count cipher frequencies
         cipher_freq = {}
@@ -220,6 +261,18 @@ class EnhancedMetropolisHastings:
                 key[cipher_char] = czech_freq_order[i]
             else:
                 key[cipher_char] = cipher_char
+        
+        # Special handling: if underscore is very frequent in cipher (>15%), 
+        # it's likely the space character
+        total_chars = len(ciphertext)
+        for cipher_char, count in cipher_freq.items():
+            if count / total_chars > 0.15 and key.get(cipher_char) != '_':
+                # This is likely the space character
+                # Find what currently maps to underscore and swap
+                for k, v in key.items():
+                    if v == '_':
+                        key[k], key[cipher_char] = key[cipher_char], key[k]
+                        break
         
         return key
     
