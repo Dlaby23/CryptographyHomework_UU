@@ -69,7 +69,7 @@ def decrypt_all_test_files():
     """Dešifruje všechny testovací soubory."""
     
     # Najdi testovací soubory
-    test_files_pattern = "/Users/vaclavdlabac/Desktop/HOMEWORK/MIPY_SIFRY/Testovaci_soubory/*_ciphertext.txt"
+    test_files_pattern = "/Users/vaclavdlabac/Desktop/Cryptography Homework/Testovaci_soubory/*_ciphertext.txt"
     test_files = glob.glob(test_files_pattern)
     
     if not test_files:
